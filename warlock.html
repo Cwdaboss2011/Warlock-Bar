@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+        }
+        #progressContainer {
+            width: 300px;
+            margin: 20px 0;
+        }
+        progress {
+            width: 100%;
+            height: 25px;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .buttons {
+            margin: 10px 0;
+        }
+        .buttons button {
+            padding: 8px 12px;
+            margin: 3px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h2 id="valueDisplay">0 / 150</h2>
+    <div id="progressContainer">
+        <progress id="progressBar" value="0" max="150"></progress>
+    </div>
+
+    <!-- Buttons -->
+    <div class="buttons">
+        <button data-change="-10">-10</button>
+        <button data-change="-5">-5</button>
+        <button data-change="-1">-1</button>
+        <button data-change="+1">+1</button>
+        <button data-change="+5">+5</button>
+        <button data-change="+10">+10</button>
+    </div>
+
+    <!-- Input Box -->
+    <input type="number" id="valueInput" min="0" max="150" placeholder="Enter value">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMcdDMNs03vNS0SMy6S2241uEHtC3IMMw",
+            authDomain: "progress-bar-demo-899f1.firebaseapp.com",
+            databaseURL: "https://progress-bar-demo-899f1-default-rtdb.firebaseio.com",
+            projectId: "progress-bar-demo-899f1",
+            storageBucket: "progress-bar-demo-899f1.appspot.com",
+            messagingSenderId: "760456231707",
+            appId: "1:760456231707:web:b807d12ba3da6580ef31be"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // --- DOM Elements ---
+        const progressBar = document.getElementById('progressBar');
+        const valueDisplay = document.getElementById('valueDisplay');
+        const valueInput = document.getElementById('valueInput');
+        const buttons = document.querySelectorAll('.buttons button');
+        const MAX_VALUE = 150;
+
+        // --- Update Progress Function ---
+        function updateProgress(value) {
+            if (value < 0) value = 0;
+            if (value > MAX_VALUE) value = MAX_VALUE;
+            progressBar.value = value;
+            valueDisplay.textContent = `${value} / ${MAX_VALUE}`;
+        }
+
+        // --- Read / Write Firebase ---
+        const valueRef = database.ref('progress/value');
+
+        // Listen for database changes
+        valueRef.on('value', (snapshot) => {
+            const value = snapshot.val() || 0;
+            updateProgress(value);
+            valueInput.value = value;
+        });
+
+        // Input box changes
+        valueInput.addEventListener('input', () => {
+            let value = parseInt(valueInput.value) || 0;
+            if(value < 0) value = 0;
+            if(value > MAX_VALUE) value = MAX_VALUE;
+            valueRef.set(value);
+        });
+
+        // Button changes
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                let change = parseInt(btn.getAttribute('data-change'));
+                let current = parseInt(progressBar.value) || 0;
+                let newValue = current + change;
+                if(newValue < 0) newValue = 0;
+                if(newValue > MAX_VALUE) newValue = MAX_VALUE;
+                valueRef.set(newValue); // Updates Firebase
+            });
+        });
+
+        // Initialize
+        updateProgress(0);
+    </script>
+</body>
+</html>
